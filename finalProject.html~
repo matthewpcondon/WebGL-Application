@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>
+			Final Project
+		</title>
+		<!-- This is so my browser console doesn't complain about character sets. -->
+		<meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+		<script id="vertex-shader" type="x-shader/x-vertex">
+			attribute vec4 vPosition;
+			varying vec4 fColor;
+			attribute vec4 vColor;
+			attribute vec3 vNormal;
+			uniform mat4 modelViewMatrix;
+			uniform mat4 projectionMatrix;
+			
+			attribute vec2 isMoving;
+			uniform float Malachor;
+			uniform mat4 boxMatrix;
+			
+			attribute vec2 vTexCoord;
+			varying vec2 fTexCoord;
+			varying vec2 vUseTex;
+			attribute vec2 aUseTex;
+			
+			uniform float shininess;
+			uniform vec4 uLightPosition1, uLightPosition2, uAmbientProduct1, uDiffuseProduct1, uSpecularProduct1, uAmbientProduct2, uDiffuseProduct2, uSpecularProduct2;
+			void main(){
+				vec3 pos = -(modelViewMatrix * vPosition).xyz;
+				//fixed light postions
+				vec3 light1 = uLightPosition1.xyz;
+				vec3 light2 = uLightPosition2.xyz;
+				vec3 L1 = normalize( light1 - pos );
+				vec3 E1 = normalize( -pos );
+				vec3 H1 = normalize( L1 + E1 );
+				vec3 L2 = normalize( light2 - pos );
+				vec3 E2 = normalize( -pos );
+				vec3 H2 = normalize( L2 + E2 );
+				vec4 NN = vec4(vNormal,0);
+				// Transform vertex normal into eye coordinates
+				vec3 N = normalize( (modelViewMatrix*NN).xyz);
+				// Compute terms in the illumination equation
+				vec4 ambient1 = uAmbientProduct1;
+				float Kd1 = max( dot(L1, N), 0.0 );
+				vec4 diffuse1 = Kd1*uDiffuseProduct1;
+				float Ks1 = pow( max(dot(N, H1), 0.0), shininess );
+				vec4 specular1 = Ks1 * uSpecularProduct1;
+				if( dot(L1, N) < 0.0 ) {
+					specular1 = vec4(0.0, 0.0, 0.0, 1.0);
+				} 
+				vec4 ambient2 = uAmbientProduct2;
+				float Kd2 = max( dot(L2, N), 0.0 );
+				vec4 diffuse2 = Kd2*uDiffuseProduct2;
+				float Ks2 = pow( max(dot(N, H2), 0.0), shininess );
+				vec4 specular2 = Ks2 * uSpecularProduct2;
+				if( dot(L2, N) < 0.0 ) {
+					specular2 = vec4(0.0, 0.0, 0.0, 1.0);
+				} 
+				
+				fColor += vColor + ambient1 + diffuse1 + specular1 + ambient2 + diffuse2 + specular2;
+				fColor.a = 1.0;
+				
+				if (isMoving == (vec2(1.0, 1.0))){ // Is it the cube?
+					// Calculate the next position for the cube's vertices.
+					gl_Position = projectionMatrix * boxMatrix * vPosition;
+				}
+				else {
+					gl_Position = projectionMatrix * modelViewMatrix * vPosition;
+				}
+				vUseTex = aUseTex;
+				fTexCoord = vTexCoord;
+			}
+		</script>
+		<script id="fragment-shader" type="x-shader/x-fragment">
+			precision mediump float;
+			varying vec4 fColor;
+			varying vec2 vUseTex;
+			varying vec2 fTexCoord;
+			uniform sampler2D texture;
+			void main(){
+				if (vUseTex == vec2(1.0, 1.0)){
+					gl_FragColor = fColor * texture2D( texture, fTexCoord );
+    			}
+    			else {
+    				gl_FragColor = fColor;
+    			}
+			}
+		</script>
+		<script type="text/javascript" src="webgl-utils.js"></script>
+		<script type="text/javascript" src="InitShaders.js"></script>
+		<script type="text/javascript" src="MV.js"></script>
+		<script type="text/javascript" src="finalProject.js"></script>
+	</head>
+	<body onload="YakovlevYakThirtyEight()">
+		<img id = "Gentlemen, this... is a duck..." src = "duck.gif" hidden></img>
+		Use the arrow keys to pan, 'z' to zoom in, 'x' to zoom out.
+		<div>
+			<button id="orbitY">Orbit Y</button>
+		</div>
+		<div>
+			<button id="frontPerspective">Front Perspective</button>
+			<button id="backPerspective">Back Perspective</button>
+		</div>
+		<div>
+			<button id="leftPerspective">Left Perspective</button>
+			<button id="rightPerspective">Right Perspective</button>
+		</div>
+		<div>
+			<button id="topPerspective">Top Perspective</button>
+			<button id="bottomPerspective">Bottom Perspective</button>
+		</div>
+		<div>
+			<button id="isometricView">Isometric Perspective</button>
+		</div>
+		<div>
+			<button id="maneuver">Start barrel roll</button>
+		</div>
+		<div id="type1">
+		
+		</div>
+		<div>
+			<canvas id="Sukhoi Su-24" width="500" height="500">
+				This needs to support the HTML5 canvas element!
+			</canvas>
+		</div>
+	</body>
+</html>
